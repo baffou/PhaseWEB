@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Local intensity and wavefront reconstruction using quadriwave lateral shearing interferometry.">
+  <title>PhaseWEB · QLSI Workspace</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="js/app.mjs"></script>
+</head>
+<body>
+<header><a class="brand" href="./"><span class="brand-icon">φ</span> Phase<span>WEB</span></a><span class="header-meta">QUANTITATIVE IMAGING WORKSPACE</span><span class="local"><i></i> Local processing</span></header>
+<main>
+  <section class="intro"><div><p class="eyebrow">QUADRIWAVE LATERAL SHEARING INTERFEROMETRY</p><h1>From interferogram<br>to wavefront.</h1><p class="lede">Import your acquisitions, configure your microscope<br class="desktop"> and reconstruct intensity and optical path difference.</p></div><div class="intro-actions"><span class="version">FOURIER RECONSTRUCTION / v0.1</span><button id="demo" class="secondary">Load demonstration <span>↗</span></button><small>Synthetic data · known OPD ±120 nm</small></div></section>
+  <div class="workspace">
+    <aside>
+      <section class="panel"><div class="section-title"><span class="step">01</span><h2>Acquisitions</h2></div>
+        <label class="upload" for="sample-file"><span class="upload-icon">⊕</span><strong>Sample interferogram</strong><span id="sample-name">Choose a file</span><small>Uncompressed TIFF · 8-bit grayscale PNG</small><input id="sample-file" type="file" accept=".tif,.tiff,.png"></label>
+        <label class="upload compact" for="reference-file"><strong>＋ Reference (blank field)</strong><span id="reference-name">Optional · aberration correction</span><input id="reference-file" type="file" accept=".tif,.tiff,.png"></label>
+        <button id="clear-reference" class="text-button" hidden>Remove reference</button><p class="hint">No files are uploaded to a server.</p>
+      </section>
+      <form id="settings">
+        <section class="panel"><div class="section-title"><span class="step">02</span><h2>Microscope & calibration</h2></div>
+          <div class="fields"><label>Camera pixel size <span>µm</span><input name="pixel" type="number" value="6.5" min="0.01" max="1000" step="any" required></label><label>Total magnification <span>×</span><input name="magnification" type="number" value="60" min="0.01" max="10000" step="any" required></label><label>Wavelength <span>nm</span><input name="wavelength" type="number" value="550" min="1" max="1000000" step="any" required></label><label>Numerical aperture<input name="na" type="number" value="1.2" min="0.01" max="2" step="any" required></label></div>
+          <label class="full-label">Calibrated factor α <span>dimensionless / rad</span><input name="alpha" type="number" value="0.00318" min="0.000000001" max="100" step="any" required></label>
+          <p class="hint">∇W = α · arg(H). The initial value is an example from the paper; replace it with your calibration. NA documents the microscope and does not affect reconstruction.</p>
+          <p class="sampling" id="sampling">Object sampling: 108.3 nm / pixel</p>
+        </section>
+        <section class="panel"><div class="section-title"><span class="step">03</span><h2>Fourier filtering</h2></div>
+          <p class="hint">Two orders at 90°. Coordinates relative to the center, in cycles / camera pixel (y points down).</p>
+          <div class="fields"><label>Order 1 · f<sub>x</sub><input name="fx1" type="number" value="0.3125" min="-0.4999" max="0.4999" step="any" required></label><label>Order 1 · f<sub>y</sub><input name="fy1" type="number" value="0.125" min="-0.4999" max="0.4999" step="any" required></label><label>Order 2 · f<sub>x</sub><input name="fx2" type="number" value="-0.125" min="-0.4999" max="0.4999" step="any" required></label><label>Order 2 · f<sub>y</sub><input name="fy2" type="number" value="0.3125" min="-0.4999" max="0.4999" step="any" required></label></div>
+          <label class="full-label">Disk radius <span>cycles / pixel</span><input name="radius" type="number" value="0.1" min="0.001" max="0.24" step="any" required></label>
+          <p class="hint">Click the spectrum to position the orders. The same radius filters the zero order and both side orders.</p>
+          <button id="run" type="submit" class="primary" disabled>Reconstruct images <span>→</span></button>
+        </section>
+      </form>
+    </aside>
+    <section class="results">
+      <div class="results-top"><div><p class="eyebrow">RECONSTRUCTION WORKSPACE</p><h2>One acquisition, two perspectives.</h2></div><span class="badge" id="data-badge">Waiting for images</span></div>
+      <div id="status" class="status" role="status" aria-live="polite">Start by importing an interferogram or explore the demonstration.</div>
+      <div id="warnings" class="warnings" hidden></div>
+      <div class="image-grid">
+        <article class="image-card"><div class="card-head"><h3>Interferogram</h3><span>ACQUISITION</span></div><div class="canvas-wrap"><canvas id="raw" width="256" height="256" aria-label="Imported interferogram"></canvas><p class="empty">Your acquisition will appear here</p></div><div class="card-foot"><span id="raw-range">Camera intensity</span><span id="image-size">— × — px</span></div></article>
+        <article class="image-card"><div class="card-head"><h3>Fourier spectrum</h3><select id="pick-order" aria-label="Order to position"><option value="1">Place order 1</option><option value="2">Place order 2</option></select></div><div class="canvas-wrap"><canvas id="fourier" width="256" height="256" aria-label="Fourier spectrum, click to select an order"></canvas><p class="empty">Diffraction orders reveal the gradients</p></div><div class="card-foot"><span>log(1 + |FFT|)</span><span class="legend">● Order 1 <b>● Order 2</b></span></div></article>
+        <article class="image-card"><div class="card-head"><h3 id="intensity-title">Reconstructed intensity</h3><span id="intensity-unit">CAMERA UNITS</span></div><div class="canvas-wrap"><canvas id="intensity" width="256" height="256" aria-label="Reconstructed intensity"></canvas><p class="empty">Intensity without the fringes</p></div><div class="card-foot"><span id="intensity-range">—</span><button class="text-button export-image" data-target="intensity" disabled>PNG ↓</button></div></article>
+        <article class="image-card"><div class="card-head"><h3>Wavefront</h3><select id="wave-unit" aria-label="Wavefront unit"><option value="opd">OPD · nm</option><option value="phase">Phase · rad</option></select></div><div class="canvas-wrap wave"><canvas id="wavefront" width="256" height="256" aria-label="Wavefront map"></canvas><p class="empty">Optical path difference, pixel by pixel</p></div><div class="card-foot"><span id="wave-range">—</span><button class="text-button export-image" data-target="wavefront" disabled>PNG ↓</button></div></article>
+      </div>
+      <div class="metrics"><div><span>OPD · peak-to-valley</span><strong id="pv">— <small>nm</small></strong></div><div><span>OPD · RMS</span><strong id="rms">— <small>nm</small></strong></div><div><span>Reconstructed field</span><strong id="fov">— <small>µm</small></strong></div></div>
+      <div class="export-bar"><div><strong>Keep the values, beyond the image.</strong><p>Numerical exports include parameters and units. PNG: normalized visualization.</p></div><div><button id="export-csv" class="secondary" disabled>OPD CSV ↓</button><button id="export-json" class="secondary" disabled>Results JSON ↓</button></div></div>
+      <details class="method"><summary>Reconstruction method, conventions and limitations <span>＋</span></summary><p>2D FFT → filtering disks → demodulation of both orders → arg(H · conj(Href)) → calibrated gradients → rotation → spectral least-squares integration. Intensity comes from the zero order; with a reference, T/Tref is displayed.</p><p>The wavefront is expressed as OPD (nm), with piston and mean tilt removed. Integration uses periodic boundary conditions: objects cut off at the edges may cause artifacts. No gradient unwrapping or vortex handling is applied. Dark regions may make phase estimates unreliable.</p><p>Images are center-cropped to power-of-two dimensions, up to 1024 × 1024, without resampling. Both files must have the same original dimensions. Magnification sets the object-space scale, not the OPD amplitude. For measurements, use linear camera TIFF data and an experimental calibration of α.</p><p>Scientific basis: G. Baffou, J. Phys. D: Appl. Phys. 54 (2021) 294002, §5. The supplied MATLAB screenshot uses α = 0.52 without specifying its unit; its convention must be confirmed before quantitative use.</p></details>
+    </section>
+  </div>
+</main>
+<footer><span>PhaseWEB <b>/</b> QLSI WORKSPACE</span><span>Your images stay on your computer.</span></footer>
+</body>
+</html>
